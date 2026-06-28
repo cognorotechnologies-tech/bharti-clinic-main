@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
+@import "tailwindcss";
+@config "../tailwind.config.ts";
+
+@layer base {
+    body {
+        background-color: theme('colors.ivory.DEFAULT');
+        font-family: theme('fontFamily.body');
+        scroll-behavior: smooth;
+        color: theme('colors.charcoal.DEFAULT');
+    }
+
+    /* Smooth gradient scroll glow effect */
+    ::selection {
+        background-color: theme('colors.lotus.light');
+        color: theme('colors.maroon.DEFAULT');
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: theme('colors.lotus.DEFAULT');
+        border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: theme('colors.lotus.deep');
+    }
+}

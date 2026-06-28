@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String
+  name         String
+  role         Role           @default(USER)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  blogPost     BlogPost[]
+  inventoryLog InventoryLog[]
+  review       Review[]
+}
+
+model Category {
+  id        String       @id @default(uuid())
+  name      String
+  slug      String       @unique
+  type      CategoryType
+  imageUrl  String?
+  createdAt DateTime     @default(now())
+  products  Product[]
+  therapies Therapy[]
+}
+
+model Product {
+  id            String         @id @default(uuid())
+  name          String
+  slug          String         @unique
+  sku           String?
+  description   String
+  ingredients   String?
+  howToUse      String?
+  price         Decimal        @db.Decimal(10, 2)
+  comparePrice  Decimal?       @db.Decimal(10, 2)
+  stock         Int            @default(0)
+  categoryId    String
+  imageUrls     String[]       @default([])
+  isActive      Boolean        @default(true)
+  isFeatured    Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  inventoryLogs InventoryLog[]
+  category      Category       @relation(fields: [categoryId], references: [id])
+  reviews       Review[]
+}
+
+model Therapy {
+  id              String           @id @default(uuid())
+  name            String
+  slug            String           @unique
+  description     String
+  durationMinutes Int
+  basePrice       Decimal          @db.Decimal(10, 2)
+  discountedPrice Decimal?         @db.Decimal(10, 2)
+  discountExpiry  DateTime?
+  isActive        Boolean          @default(true)
+  isFeatured      Boolean          @default(false)
+  categoryId      String
+  imageUrl        String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  appointments    Appointment[]
+  packages        PackageTherapy[]
+  category        Category         @relation(fields: [categoryId], references: [id])
+}
+
+model Package {
+  id            String           @id @default(uuid())
+  name          String
+  slug          String           @unique
+  description   String
+  totalPrice    Decimal          @db.Decimal(10, 2)
+  originalPrice Decimal          @db.Decimal(10, 2)
+  validFrom     DateTime?
+  validTo       DateTime?
+  couponCode    String?
+  isActive      Boolean          @default(true)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  therapies     PackageTherapy[]
+}
+
+model PackageTherapy {
+  packageId String
+  therapyId String
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  therapy   Therapy @relation(fields: [therapyId], references: [id], onDelete: Cascade)
+
+  @@id([packageId, therapyId])
+}
+
+model Order {
+  id              String        @id @default(uuid())
+  patientName     String
+  phone           String
+  email           String
+  status          OrderStatus   @default(PENDING)
+  items           Json
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  shippingAddress Json
+  paymentMethod   String
+  paymentStatus   PaymentStatus @default(PENDING)
+  razorpayOrderId String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Appointment {
+  id            String            @id @default(uuid())
+  patientName   String
+  phone         String
+  email         String
+  therapyId     String
+  preferredDate DateTime          @db.Date
+  preferredTime String
+  status        AppointmentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  therapy       Therapy           @relation(fields: [therapyId], references: [id])
+}
+
+model GalleryItem {
+  id           String    @id @default(uuid())
+  type         MediaType
+  url          String
+  thumbnailUrl String?
+  category     String
+  caption      String?
+  sortOrder    Int       @default(0)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Review {
+  id          String       @id @default(uuid())
+  productId   String
+  userId      String?
+  patientName String
+  rating      Int          @db.SmallInt
+  comment     String
+  status      ReviewStatus @default(PENDING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  product     Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user        User?        @relation(fields: [userId], references: [id])
+}
+
+model BlogPost {
+  id          String     @id @default(uuid())
+  title       String
+  slug        String     @unique
+  content     String
+  excerpt     String
+  imageUrl    String?
+  tags        String[]   @default([])
+  status      PostStatus @default(DRAFT)
+  authorId    String
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  author      User       @relation(fields: [authorId], references: [id])
+}
+
+model Setting {
+  key       String      @id @unique
+  value     String
+  type      SettingType @default(STRING)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model InventoryLog {
+  id           String   @id @default(uuid())
+  productId    String
+  changeAmount Int
+  newStock     Int
+  reason       String
+  adminId      String
+  createdAt    DateTime @default(now())
+  admin        User     @relation(fields: [adminId], references: [id])
+  product      Product  @relation(fields: [productId], references: [id])
+}
+
+model ContactMessage {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  STAFF
+  USER
+}
+
+enum CategoryType {
+  PRODUCT
+  THERAPY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum MediaType {
+  PHOTO
+  VIDEO
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum SettingType {
+  STRING
+  JSON
+  BOOLEAN
+}
